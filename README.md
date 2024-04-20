@@ -1,5 +1,4 @@
-# BlueThinnerLite
-A modding toolkit for Epic Mickey (2).
+![image](https://github.com/abso1utezer0/BlueThinnerLite/assets/83473579/60a7967b-a0ee-43b1-b252-25bb33bc1fb7)
 
 # Installing
 Simply download the latest ZIP file from [the releases page](https://github.com/abso1utezer0/BlueThinnerLite/releases/) and extract it to the desired location.
