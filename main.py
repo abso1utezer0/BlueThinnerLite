@@ -134,6 +134,8 @@ QScrollBar::sub-line:horizontal {
 }
 """
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
 class SettingsWindow(QMainWindow):
     config: dict
     font_combo: QComboBox
@@ -267,7 +269,7 @@ class InfoWindow(QMainWindow):
 
         # banner
         banner = QLabel()
-        banner.setPixmap(QPixmap("assets/banner.png").scaledToWidth(400))
+        banner.setPixmap(QPixmap(os.path.join(script_dir, "assets/banner.png")).scaledToWidth(400))
         layout.addRow(banner)
 
         # separator
@@ -912,11 +914,6 @@ class MainWindow(QMainWindow):
         return bytes.fromhex(text)
 
 def main():
-    # get the directory which the script is in
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    # set the working directory to the script directory
-    os.chdir(script_dir)
-
     # set the app id for the taskbar icon
     myappid = "abso1utezer0.BlueThinnerLite"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -966,8 +963,8 @@ def main():
         sys.__excepthook__(exctype, value, traceback)
 
     # set the app icon
-    if os.path.exists("assets/icon.ico"):
-        app.setWindowIcon(QIcon("assets/icon.ico"))
+    if os.path.exists(os.path.join(script_dir, "assets/icon.ico")):
+        app.setWindowIcon(QIcon(os.path.join(script_dir, "assets/icon.ico")))
 
     sys.excepthook = excepthook
 
@@ -996,10 +993,10 @@ def main():
                     # add a button to ignore updates in the future
                     ignore_button = msg.addButton("Ignore Updates", QMessageBox.ActionRole)
                     def ignore_updates():
-                        with open("config.json", "r") as f:
+                        with open(os.path.join(script_dir, "config.json"), "r") as f:
                             config = json.load(f)
                         config["ignore_updates"] = True
-                        with open("config.json", "w") as f:
+                        with open(os.path.join(script_dir, "config.json"), "w") as f:
                             json.dump(config, f)
                     ignore_button.clicked.connect(ignore_updates)
                     msg.setStandardButtons(QMessageBox.Ok)
