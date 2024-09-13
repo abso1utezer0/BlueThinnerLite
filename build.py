@@ -10,7 +10,7 @@ import os
 import shutil
 
 # build EXE
-os.system(f"pyinstaller -F main.py --windowed --noconsole --icon=assets/icon.ico") 
+os.system(f"python \"C:\Python310\Lib\site-packages\PyInstaller\__main__.py\" -F main.py --windowed --noconsole --icon=assets/icon.ico") 
 
 # setup folders if they don't exist
 

@@ -57,9 +57,9 @@ from epicmickeylib.internal.file_manipulator import EndianType, FileManipulator
 # Defines the tool's name in the taskbar and the EXE (used in build.py)
 APP_NAME = "BlueThinner Lite"
 # Version, must match GitHub release's version for the auto update notifier to work
-APP_VERSION = "v1.0.1"
+APP_VERSION = "v1.1.0"
 # link to the modding/research server
-DISCORD_LINK = "https://google.com/" # usually a discord link, stripped out for collegeboard
+DISCORD_LINK = "https://discord.com/invite/gFrXryz8Kf" 
 
 # used when no config.json is found
 DEFAULT_CONFIG = {
@@ -70,6 +70,9 @@ DEFAULT_CONFIG = {
     "update_shortcut": "Ctrl+S",
     "unluac_path": "./thirdparty/unluac.jar",
     "luac_path": "./thirdparty/luac.exe",
+    "assetcc2_path": "./thirdparty/AssetCC2.exe",
+    "dxdecompiler_path": "./thirdparty/DXDecompilerCmd.exe",
+    "fxc_path": "./thirdparty/fxc.exe",
     "ignore_updates": False
 }
 
@@ -142,6 +145,9 @@ class SettingsWindow(QMainWindow):
     # lua paths
     unluac_path_line_edit: QLineEdit
     luac_path_line_edit: QLineEdit
+    assetcc2_path_line_edit: QLineEdit
+    dxdecompiler_path_line_edit: QLineEdit
+    fxc_path_line_edit: QLineEdit
     ignore_updates_checkbox: QCheckBox
 
     def __init__(self, parent):
@@ -194,6 +200,18 @@ class SettingsWindow(QMainWindow):
         self.luac_path_line_edit = QLineEdit()
         self.luac_path_line_edit.setText(self.config["luac_path"])
         layout.addRow(QLabel("luac Path"), self.luac_path_line_edit)
+        
+        self.assetcc2_path_line_edit = QLineEdit()
+        self.assetcc2_path_line_edit.setText(self.config["assetcc2_path"])
+        layout.addRow(QLabel("AssetCC2 Path"), self.assetcc2_path_line_edit)
+
+        self.dxdecompiler_path_line_edit = QLineEdit()
+        self.dxdecompiler_path_line_edit.setText(self.config["dxdecompiler_path"])
+        layout.addRow(QLabel("DXDecompilerCMD Path"), self.dxdecompiler_path_line_edit)
+
+        self.fxc_path_line_edit = QLineEdit()
+        self.fxc_path_line_edit.setText(self.config["fxc_path"])
+        layout.addRow(QLabel("FXC Path"), self.fxc_path_line_edit)
 
         # ignore updates checkbox
         self.ignore_updates_checkbox = QCheckBox()
@@ -212,6 +230,9 @@ class SettingsWindow(QMainWindow):
         self.config["update_shortcut"] = self.update_shortcut_line_edit.text()
         self.config["unluac_path"] = self.unluac_path_line_edit.text()
         self.config["luac_path"] = self.luac_path_line_edit.text()
+        self.config["assetcc2_path"] = self.assetcc2_path_line_edit.text()
+        self.config["dxdecompiler_path"] = self.dxdecompiler_path_line_edit.text()
+        self.config["fxc_path"] = self.fxc_path_line_edit.text()
         self.config["ignore_updates"] = self.ignore_updates_checkbox.isChecked()
 
         # save the config to a file
@@ -279,7 +300,6 @@ class InfoWindow(QMainWindow):
             "SlayCap - SFX insight, testing, and feedback",
             "Spek - Moral support",
             "Kalsvik - Feedback, creator of the Epic Mickey Launcher",
-            "Kriesk/EMP - Creator of the BlueThinner name",
             "YawningDog - Creator of the BlueThinner Lite icon and banner",
             "SoraTrash - Creator of the OpenEM server, which has helped with research",
             "FungusNitrogen - Initial inspiration for dialog editing",
@@ -675,6 +695,38 @@ class MainWindow(QMainWindow):
                 return data
             elif path.endswith(".hkw") or path.endswith(".level") or path.endswith(".part") or path.endswith(".r3mt") or path.endswith(".rtsa") or path.endswith(".rcla"):
                 return data.decode("utf-8")
+            elif path.endswith(".hkx"):
+                # save to temp file
+                temp_in_path = "temp.hkx"
+                temp_out_path = "temp.xml"
+                with open(temp_in_path, "wb") as f:
+                    f.write(data)
+                # run the decompiler
+                assetcc2_path = os.path.abspath(self.config["assetcc2_path"])
+                os.system(f"{assetcc2_path} {temp_in_path} {temp_out_path} -x")
+                # read the xml
+                with open(temp_out_path, "r") as f:
+                    xml = f.read()
+                # remove the temp files
+                os.remove(temp_in_path)
+                os.remove(temp_out_path)
+                return xml
+            elif path.endswith(".fxo"):
+                # save to temp file
+                temp_in_path = "temp.fxo"
+                temp_out_path = "temp.fx"
+                with open(temp_in_path, "wb") as f:
+                    f.write(data)
+                # run the decompiler
+                dxdecompiler_path = os.path.abspath(self.config["dxdecompiler_path"])
+                os.system(f"{dxdecompiler_path} {temp_in_path} -O {temp_out_path}")
+                # read the fx
+                with open(temp_out_path, "r") as f:
+                    fx = f.read()
+                # remove the temp files
+                os.remove(temp_in_path)
+                os.remove(temp_out_path)
+                return fx
             else:
                 return MainWindow.binary_to_hex(data)
         return ""
@@ -717,7 +769,7 @@ class MainWindow(QMainWindow):
                 lexer.setColor(QColor(255, 91, 79), QsciLexerLua.Number)
                 lexer.setColor(QColor(183, 128, 255), QsciLexerLua.String)
                 lexer.setColor(QColor(99, 255, 219), QsciLexerLua.Operator)
-            elif path.endswith(".dct") or path.endswith(".clb") or path.endswith(".sub") or path.endswith(".r3mt") or path.endswith(".rtsa") or path.endswith(".rcla"):
+            elif path.endswith(".dct") or path.endswith(".clb") or path.endswith(".sub") or path.endswith(".r3mt") or path.endswith(".rtsa") or path.endswith(".rcla") or path.endswith(".hkx"):
                 # xml syntax highlighting
                 lexer = QsciLexerXML(self.text_edit)
                 # setup colors
@@ -733,6 +785,8 @@ class MainWindow(QMainWindow):
             else:
                 # no syntax highlighting
                 lexer = None
+                # set the text to white
+                self.text_edit.setColor(QColor(255, 255, 255))
             if lexer:
                 lexer.setDefaultPaper(QColor(*self.config["text_background_color"]))
                 lexer.setPaper(QColor(*self.config["text_background_color"]))
@@ -819,6 +873,24 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     # the data is already in hex
                     binary = MainWindow.hex_to_binary(data)
+            elif path.endswith(".hkx"):
+                # save to temp file
+                temp_in_path = "temp.xml"
+                temp_out_path = "temp.hkx"
+                with open(temp_in_path, "w") as f:
+                    f.write(data)
+                # run the compiler
+                assetcc2_path = os.path.abspath(self.config["assetcc2_path"])
+                os.system(f"{assetcc2_path} --strip --rules4101 {temp_in_path} {temp_out_path}")
+                # read the binary
+                with open(temp_out_path, "rb") as f:
+                    binary = f.read()
+                # remove the temp files
+                os.remove(temp_in_path)
+                os.remove(temp_out_path)
+            elif path.endswith(".fxo"):
+                # throw unimplemented error
+                raise NotImplementedError("Editing FXO files is not yet supported")
             elif path.endswith(".hkw") or path.endswith(".level") or path.endswith(".part") or path.endswith(".r3mt") or path.endswith(".rtsa") or path.endswith(".rcla"):
                 binary = data.encode("utf-8")
             else:
@@ -840,6 +912,11 @@ class MainWindow(QMainWindow):
         return bytes.fromhex(text)
 
 def main():
+    # get the directory which the script is in
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    # set the working directory to the script directory
+    os.chdir(script_dir)
+
     # set the app id for the taskbar icon
     myappid = "abso1utezer0.BlueThinnerLite"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -888,7 +965,7 @@ def main():
         # call the original excepthook
         sys.__excepthook__(exctype, value, traceback)
 
-    # if icon.ico exists, set the icon
+    # set the app icon
     if os.path.exists("assets/icon.ico"):
         app.setWindowIcon(QIcon("assets/icon.ico"))
 
